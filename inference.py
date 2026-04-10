@@ -9,7 +9,7 @@ API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
 MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
 
-ENV_URL = os.getenv("ENV_URL", "https://tejas01720-gridmind-rl.hf.space")
+ENV_URL = os.getenv("ENV_URL", "http://localhost:7860")
 
 MAX_STEPS = 50
 MAX_TOTAL_REWARD = 100.0
@@ -103,7 +103,7 @@ Lane Status:
 
         return "GREEN_NORTH"
 
-    except Exception as exc:
+    except Exception:
         return smart_heuristic(state, analysis)
 
 
@@ -217,8 +217,6 @@ async def main() -> None:
 
     avg = sum(r['score'] for r in results) / len(results)
     print(f"\nAverage Score: {avg:.4f}")
-
-    return results
 
 
 if __name__ == "__main__":
