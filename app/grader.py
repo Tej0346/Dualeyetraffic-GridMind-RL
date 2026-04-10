@@ -15,7 +15,7 @@ from typing import Dict, Any
 
 @dataclass
 class GradingMetrics:
-    # Container for all grading metrics.
+    """Container for all grading metrics."""
     efficiency: float = 0.0
     responsiveness: float = 0.0
     fairness: float = 0.0
@@ -24,9 +24,8 @@ class GradingMetrics:
 
 
 class Grader:
-# Strict grader: 0.9+ needs near-perfection.
-# Heavy penalties for errors; requires balancing strategic trade-offs.
-    # Target thresholds for each difficulty
+    """Strict grader: 0.9+ needs near-perfection."""
+
     THRESHOLDS = {
         "easy": {
             "vehicles_target": 20,
@@ -52,9 +51,8 @@ class Grader:
         self.task = task.lower()
         self.thresholds = self.THRESHOLDS.get(self.task, self.THRESHOLDS["easy"])
 
-    def grade(self, state: dict, info: dict) -> tuple[float, Dict[str, float]]:
-        # Calculate comprehensive score from 0.0 to 1.0.
-        # Returns both total score and individual metrics.
+    def grade(self, state: dict, info: dict) -> tuple:
+        """Calculate comprehensive score strictly between 0 and 1."""
         metrics = GradingMetrics()
 
         # 1. Efficiency Score (0.0 - 0.25)
@@ -63,7 +61,7 @@ class Grader:
         if efficiency >= efficiency_target:
             metrics.efficiency = 0.25
         else:
-            metrics.efficiency = max(0.0, (efficiency / efficiency_target) * 0.25)
+            metrics.efficiency = max(0.01, (efficiency / efficiency_target) * 0.25)
 
         # 2. Responsiveness - Emergency handling (0.0 - 0.25)
         emergencies_total = (
@@ -76,24 +74,23 @@ class Grader:
             if response_rate >= rate_target:
                 metrics.responsiveness = 0.25
             else:
-                # Heavy penalty for missed emergencies
                 metrics.responsiveness = response_rate * 0.20
                 if info.get("emergencies_missed", 0) > 2:
-                    metrics.responsiveness *= 0.5  # Extra penalty
+                    metrics.responsiveness *= 0.5
         else:
-            metrics.responsiveness = 0.20  # No emergencies = partial credit
+            metrics.responsiveness = 0.20
 
         # 3. Fairness - Equal green time distribution (0.0 - 0.15)
-        # Penalize if one lane gets all the attention
         total_vehicles = state.get("total_vehicles", 0)
         lanes = state.get("lanes", {})
 
         if lanes:
             vehicle_counts = [lane.get("vehicles", 0) for lane in lanes.values()]
             if max(vehicle_counts) > 0:
-                variance = sum((v - sum(vehicle_counts)/len(vehicle_counts))**2
-                              for v in vehicle_counts) / len(vehicle_counts)
-                # Lower variance = more fair
+                variance = sum(
+                    (v - sum(vehicle_counts) / len(vehicle_counts)) ** 2
+                    for v in vehicle_counts
+                ) / len(vehicle_counts)
                 fairness_score = max(0.0, 0.15 - (variance / 100))
                 metrics.fairness = min(0.15, fairness_score)
             else:
@@ -104,14 +101,14 @@ class Grader:
         steps = state.get("steps", 1)
         change_rate = signal_changes / max(steps, 1)
 
-        if change_rate < 0.3:  # Less than 30% of steps involve signal changes
+        if change_rate < 0.3:
             metrics.stability = 0.10
         elif change_rate < 0.5:
             metrics.stability = 0.05
         else:
-            metrics.stability = 0.0  # Unstable = no stability points
+            metrics.stability = 0.0
 
-        # 5. Congestion Penalty (negative, -0.0 to -0.30)
+        # 5. Congestion Penalty (-0.30 to 0.0)
         avg_waiting = info.get("avg_waiting_time", 0)
         waiting_max = self.thresholds["waiting_time_max"]
 
@@ -123,17 +120,14 @@ class Grader:
         # Additional penalties
         extra_penalties = 0.0
 
-        # Gridlock check
         if total_vehicles > 100:
             extra_penalties -= 0.15
         elif total_vehicles > 80:
             extra_penalties -= 0.10
 
-        # Missed emergencies extra penalty
         if info.get("emergencies_missed", 0) > 3:
             extra_penalties -= 0.10
 
-        # Congestion events penalty
         congestion_events = info.get("congestion_events", 0)
         if congestion_events > 5:
             extra_penalties -= min(0.15, congestion_events * 0.03)
@@ -156,7 +150,8 @@ class Grader:
         }
         scaling = difficulty_scaling.get(self.task, 1.0)
 
-        final_score = max(0.0, min(1.0, raw_score * scaling))
+        # Strictly between 0 and 1 — never exactly 0.0 or 1.0
+        final_score = max(0.01, min(0.99, raw_score * scaling))
 
         metrics_dict = {
             "efficiency": round(metrics.efficiency, 3),
@@ -172,7 +167,7 @@ class Grader:
 
 
 def grade(state: dict, task: str = "easy", info: dict = None) -> tuple:
-    # Convenience function for grading.
+    """Convenience function for grading."""
     info = info or {}
     grader = Grader(task)
     return grader.grade(state, info)
