@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 from openai import OpenAI
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-API_KEY = os.getenv("HF_TOKEN")
+API_KEY = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
 MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
 
 ENV_URL = os.getenv("ENV_URL", "https://tejas01720-gridmind-rl.hf.space")
@@ -15,13 +15,14 @@ MAX_STEPS = 50
 MAX_TOTAL_REWARD = 100.0
 SUCCESS_SCORE_THRESHOLD = 0.7
 
-TASK_NAME = "GridMind-RL"
+TASK_NAME = "traffic-signal-control"
 BENCHMARK = "openenv-traffic-signal-v1"
 
 TEMPERATURE = 0.2
 MAX_TOKENS = 20
 
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+
 
 def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
