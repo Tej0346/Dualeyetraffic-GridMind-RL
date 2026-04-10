@@ -1,0 +1,15 @@
+[project]
+name = "traffic-signal-control"
+version = "1.0.0"
+description = "OpenEnv environment for traffic signal optimization"
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "requests>=2.31.0",
+    "pydantic>=2.0.0",
+    "openenv-core>=0.2.0",
+    "openai>=1.0.0"
+]
+
+[project.scripts]
+server = "server.app:main"

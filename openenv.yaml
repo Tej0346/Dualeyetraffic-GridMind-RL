@@ -1,0 +1,101 @@
+id: advanced-traffic-signal-control
+name: Advanced Traffic Signal Control Environment
+
+description: |
+  A research-grade traffic signal optimization environment where AI agents
+  control a multi-directional intersection under dynamic real-world conditions.
+
+  Features:
+  - 4-directional traffic (North, South, East, West)
+  - Emergency vehicle prioritization
+  - Dynamic weather conditions (clear, rain, fog, snow)
+  - Rush hour patterns and traffic spikes
+  - Long-term reward optimization
+  - Multi-metric grading system
+
+entrypoint: app.main:app
+
+endpoints:
+  reset: /reset
+  step: /step
+  state: /state
+
+actions:
+  type: string
+  values:
+    - GREEN_NORTH
+    - GREEN_SOUTH
+    - GREEN_EAST
+    - GREEN_WEST
+    - PRIORITY_GREEN
+    - HOLD
+    - RED
+
+observation:
+  type: object
+  properties:
+    lanes:
+      type: object
+      properties:
+        north:
+          vehicles: integer
+          emergency: boolean
+          waiting_time: integer
+        south:
+          vehicles: integer
+          emergency: boolean
+          waiting_time: integer
+        east:
+          vehicles: integer
+          emergency: boolean
+          waiting_time: integer
+        west:
+          vehicles: integer
+          emergency: boolean
+          waiting_time: integer
+    active_signal:
+      type: string
+    signal_state:
+      type: string
+    weather:
+      type: string
+    time_of_day:
+      type: integer
+    total_vehicles:
+      type: integer
+
+reward:
+  type: float
+  description: |
+    Comprehensive reward including:
+    - Vehicle clearance bonuses
+    - Emergency handling rewards
+    - Congestion penalties
+    - Stability bonuses
+    - Efficiency metrics
+
+tasks:
+  - name: easy
+    description: Basic traffic with low emergency frequency
+    target_score: 0.75
+    features:
+      - 4-directional traffic
+      - Basic emergencies
+      - Clear weather
+
+  - name: medium
+    description: Traffic + frequent emergencies + rush hour
+    target_score: 0.80
+    features:
+      - Increased emergency rate
+      - Rush hour multiplier
+      - Traffic spikes
+
+  - name: hard
+    description: Full complexity with weather changes
+    target_score: 0.85
+    features:
+      - Dynamic weather
+      - High emergency rate
+      - Frequent traffic spikes
+      - Gridlock risk
