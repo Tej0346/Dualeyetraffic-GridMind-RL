@@ -1,7 +1,7 @@
 [project]
-name = "traffic-signal-control"
-version = "1.0.0"
-description = "OpenEnv environment for traffic signal optimization"
+name = "dualey-hmarl-traffic-control"
+version = "3.0.0"
+description = "DualEye H-MARL: Bangalore-specific multi-intersection traffic signal optimization environment"
 dependencies = [
     "fastapi>=0.100.0",
     "uvicorn>=0.23.0",
@@ -13,3 +13,7 @@ dependencies = [
 
 [project.scripts]
 server = "server.app:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -184,7 +184,6 @@ async def run_episode(env, task: str) -> Dict[str, Any]:
             if done:
                 break
 
-        # Score calculation — strictly between 0 and 1
         total = sum(rewards)
         score = (total + MAX_TOTAL_REWARD) / (2 * MAX_TOTAL_REWARD)
         score = min(max(score, 0.01), 0.99)
@@ -193,7 +192,7 @@ async def run_episode(env, task: str) -> Dict[str, Any]:
     except Exception as exc:
         error = str(exc)
         print(f"[DEBUG] Episode error: {exc}", flush=True)
-        score = 0.1  # never 0.0
+        score = 0.1
 
     log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
 

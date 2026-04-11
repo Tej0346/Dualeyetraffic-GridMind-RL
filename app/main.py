@@ -1,18 +1,18 @@
-"""FastAPI application implementing OpenEnv spec."""
+"""FastAPI server for traffic signal control environment."""
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.env import TrafficEnv
 from app.models import (
     Observation, Action, StepResponse,
-    ResetResponse, GraderResponse, EpisodeInfo, LaneState
+    ResetResponse, GraderResponse, EpisodeInfo, LaneState, UpstreamHandoff
 )
 from app.grader import grade
 
 app = FastAPI(
-    title="Advanced Traffic Signal Control Environment",
-    description="Multi-directional traffic optimization with emergencies, weather, and dynamic patterns",
-    version="2.0.0"
+    title="DualEye H-MARL Traffic Signal Control",
+    description="Bangalore-specific multi-intersection traffic optimization with emergency prioritization, accident mode, and upstream handoff",
+    version="3.0.0"
 )
 
 app.add_middleware(
@@ -30,10 +30,11 @@ current_task: str = "easy"
 def home():
     """Health check endpoint."""
     return {
-        "message": "Advanced Traffic Optimization Environment",
+        "message": "DualEye H-MARL Traffic Optimization Environment",
         "status": "running",
-        "version": "2.0.0",
-        "endpoints": ["/reset", "/step", "/state", "/grader", "/tasks", "/metrics"]
+        "version": "3.0.0",
+        "location": "Bangalore, India",
+        "endpoints": ["/reset", "/step", "/state", "/grader", "/tasks", "/metrics", "/priority"]
     }
 
 
@@ -63,9 +64,7 @@ def step(action: Action):
 
     action_str = action.action.upper()
 
-    # Smart emergency override
     if action_str == "RED":
-        # Check for emergencies - auto-prioritize if present
         for lane in env.lanes.values():
             if lane.emergency:
                 action_str = "PRIORITY_GREEN"
@@ -105,21 +104,37 @@ def list_tasks():
         "tasks": [
             {
                 "name": "easy",
-                "description": "Basic traffic management with low emergency frequency",
+                "description": "Basic Bangalore traffic with low emergency frequency",
                 "target_score": 0.75,
-                "features": ["4-directional traffic", "basic emergencies", "clear weather"]
+                "features": [
+                    "4-directional traffic",
+                    "basic emergencies",
+                    "clear weather",
+                    "Bangalore rush hour patterns"
+                ]
             },
             {
                 "name": "medium",
-                "description": "Traffic + frequent emergencies + rush hour patterns",
+                "description": "Rush hour + emergencies + accidents",
                 "target_score": 0.80,
-                "features": ["increased emergency rate", "rush hour multiplier", "traffic spikes"]
+                "features": [
+                    "increased emergency rate",
+                    "Silk Board morning rush",
+                    "KR Puram evening rush",
+                    "accident mode"
+                ]
             },
             {
                 "name": "hard",
-                "description": "Full complexity: weather, spikes, emergencies, gridlock risk",
+                "description": "Full Bangalore chaos: weather, accidents, gridlock risk",
                 "target_score": 0.85,
-                "features": ["weather changes", "high emergency rate", "frequent spikes", "strict grading"]
+                "features": [
+                    "dynamic weather",
+                    "high emergency rate",
+                    "frequent accidents",
+                    "upstream handoff",
+                    "gridlock risk"
+                ]
             }
         ]
     }
@@ -136,7 +151,9 @@ def get_metrics():
         "current_state": {
             "total_vehicles": env.get_total_vehicles(),
             "avg_waiting_time": env._get_average_waiting_time(),
-            "active_signal": env.active_direction.value if env.active_direction else None
+            "active_signal": env.active_direction.value if env.active_direction else None,
+            "time_of_day": env.time_of_day,
+            "weather": env.weather.value
         }
     }
 
@@ -159,15 +176,19 @@ def get_priority_lanes():
     best = env._get_highest_priority_lane()
     return {
         "priorities": priorities,
-        "recommended_action": f"GREEN_{best.value.upper()}"
+        "recommended_action": f"GREEN_{best.value.upper()}",
+        "upstream_handoff": env.state().get("upstream_handoff", {})
     }
 
 
 def _parse_observation(state: dict) -> Observation:
-    """Parse state dict into Observation model."""
+    """Convert raw state dict to Observation model."""
     lanes = {}
     for key, value in state.get("lanes", {}).items():
         lanes[key] = LaneState(**value)
+
+    handoff_data = state.get("upstream_handoff")
+    handoff = UpstreamHandoff(**handoff_data) if handoff_data else None
 
     return Observation(
         lanes=lanes,
@@ -177,5 +198,6 @@ def _parse_observation(state: dict) -> Observation:
         time_of_day=state.get("time_of_day", 12),
         total_vehicles=state.get("total_vehicles", 0),
         steps=state.get("steps", 0),
-        task=state.get("task", "easy")
+        task=state.get("task", "easy"),
+        upstream_handoff=handoff
     )

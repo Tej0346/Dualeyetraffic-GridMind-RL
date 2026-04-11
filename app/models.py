@@ -11,6 +11,16 @@ class LaneState(BaseModel):
     waiting_time: int
 
 
+class UpstreamHandoff(BaseModel):
+    """Upstream handoff message between intersections."""
+    incoming_direction: str
+    vehicle_count: int
+    eta_seconds: int
+    emergency_incoming: bool
+    weather: str
+    time_of_day: int
+
+
 class Observation(BaseModel):
     """Full environment observation."""
     lanes: Dict[str, LaneState]
@@ -21,6 +31,7 @@ class Observation(BaseModel):
     total_vehicles: int
     steps: int
     task: str
+    upstream_handoff: Optional[UpstreamHandoff] = None
 
 
 class Action(BaseModel):
@@ -42,6 +53,7 @@ class EpisodeInfo(BaseModel):
     emergencies_handled: int = 0
     emergencies_missed: int = 0
     congestion_events: int = 0
+    accident_events: int = 0
     avg_waiting_time: float = 0.0
     signal_changes: int = 0
     efficiency: float = 0.0

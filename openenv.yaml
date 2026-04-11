@@ -1,16 +1,17 @@
-id: advanced-traffic-signal-control
-name: Advanced Traffic Signal Control Environment
+id: dualey-hmarl-traffic-control
+name: DualEye H-MARL Traffic Signal Control
 
 description: |
-  A research-grade traffic signal optimization environment where AI agents
-  control a multi-directional intersection under dynamic real-world conditions.
+  A Bangalore-specific research-grade OpenEnv environment for training and 
+  evaluating AI agents on real-world traffic signal optimization.
 
   Features:
   - 4-directional traffic (North, South, East, West)
-  - Emergency vehicle prioritization
+  - Bangalore-specific rush hour patterns (Silk Board, KR Puram, Hebbal)
+  - Emergency vehicle prioritization with green wave
+  - Accident mode blocking lanes temporarily
+  - Upstream handoff messages between intersections
   - Dynamic weather conditions (clear, rain, fog, snow)
-  - Rush hour patterns and traffic spikes
-  - Long-term reward optimization
   - Multi-metric grading system
 
 entrypoint: app.main:app
@@ -38,64 +39,82 @@ observation:
       type: object
       properties:
         north:
-          vehicles: integer
-          emergency: boolean
-          waiting_time: integer
+          type: object
+          properties:
+            vehicles: {type: integer}
+            emergency: {type: boolean}
+            waiting_time: {type: integer}
         south:
-          vehicles: integer
-          emergency: boolean
-          waiting_time: integer
+          type: object
+          properties:
+            vehicles: {type: integer}
+            emergency: {type: boolean}
+            waiting_time: {type: integer}
         east:
-          vehicles: integer
-          emergency: boolean
-          waiting_time: integer
+          type: object
+          properties:
+            vehicles: {type: integer}
+            emergency: {type: boolean}
+            waiting_time: {type: integer}
         west:
-          vehicles: integer
-          emergency: boolean
-          waiting_time: integer
-    active_signal:
-      type: string
-    signal_state:
-      type: string
-    weather:
-      type: string
-    time_of_day:
-      type: integer
-    total_vehicles:
-      type: integer
+          type: object
+          properties:
+            vehicles: {type: integer}
+            emergency: {type: boolean}
+            waiting_time: {type: integer}
+    active_signal: {type: string}
+    signal_state: {type: string}
+    weather: {type: string}
+    time_of_day: {type: integer}
+    total_vehicles: {type: integer}
+    steps: {type: integer}
+    task: {type: string}
+    upstream_handoff:
+      type: object
+      properties:
+        incoming_direction: {type: string}
+        vehicle_count: {type: integer}
+        eta_seconds: {type: integer}
+        emergency_incoming: {type: boolean}
+        weather: {type: string}
+        time_of_day: {type: integer}
 
 reward:
   type: float
   description: |
     Comprehensive reward including:
     - Vehicle clearance bonuses
-    - Emergency handling rewards
+    - Emergency handling rewards (+15)
+    - Accident response
     - Congestion penalties
     - Stability bonuses
-    - Efficiency metrics
+    - Bangalore rush hour multipliers
 
 tasks:
   - name: easy
-    description: Basic traffic with low emergency frequency
+    description: Basic Bangalore traffic with low emergency frequency
     target_score: 0.75
     features:
       - 4-directional traffic
       - Basic emergencies
+      - Bangalore rush hour patterns
       - Clear weather
 
   - name: medium
-    description: Traffic + frequent emergencies + rush hour
+    description: Rush hour + emergencies + accidents
     target_score: 0.80
     features:
       - Increased emergency rate
-      - Rush hour multiplier
-      - Traffic spikes
+      - Silk Board morning rush (3.5x)
+      - KR Puram evening rush (3.0x)
+      - Accident mode
 
   - name: hard
-    description: Full complexity with weather changes
+    description: Full Bangalore chaos with weather and gridlock risk
     target_score: 0.85
     features:
       - Dynamic weather
       - High emergency rate
-      - Frequent traffic spikes
+      - Frequent accidents
+      - Upstream handoff
       - Gridlock risk

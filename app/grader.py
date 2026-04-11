@@ -1,12 +1,5 @@
 """
 Advanced Grading System for Traffic Signal Control.
-
-Multi-metric evaluation:
-- Efficiency: Vehicles cleared per step
-- Responsiveness: Emergency handling rate
-- Fairness: Equitable distribution of green time
-- Stability: Signal change frequency
-- Congestion: Peak traffic management
 """
 
 from dataclasses import dataclass
@@ -24,7 +17,7 @@ class GradingMetrics:
 
 
 class Grader:
-    """Strict grader: 0.9+ needs near-perfection."""
+    """Strict grader: scores strictly between 0 and 1."""
 
     THRESHOLDS = {
         "easy": {
@@ -52,7 +45,7 @@ class Grader:
         self.thresholds = self.THRESHOLDS.get(self.task, self.THRESHOLDS["easy"])
 
     def grade(self, state: dict, info: dict) -> tuple:
-        """Calculate comprehensive score strictly between 0 and 1."""
+        """Calculate score strictly between 0 and 1."""
         metrics = GradingMetrics()
 
         # 1. Efficiency Score (0.0 - 0.25)
@@ -63,7 +56,7 @@ class Grader:
         else:
             metrics.efficiency = max(0.01, (efficiency / efficiency_target) * 0.25)
 
-        # 2. Responsiveness - Emergency handling (0.0 - 0.25)
+        # 2. Responsiveness (0.0 - 0.25)
         emergencies_total = (
             info.get("emergencies_handled", 0) +
             info.get("emergencies_missed", 0)
@@ -80,7 +73,7 @@ class Grader:
         else:
             metrics.responsiveness = 0.20
 
-        # 3. Fairness - Equal green time distribution (0.0 - 0.15)
+        # 3. Fairness (0.0 - 0.15)
         total_vehicles = state.get("total_vehicles", 0)
         lanes = state.get("lanes", {})
 
@@ -96,7 +89,7 @@ class Grader:
             else:
                 metrics.fairness = 0.15
 
-        # 4. Stability - Signal change frequency (0.0 - 0.10)
+        # 4. Stability (0.0 - 0.10)
         signal_changes = info.get("signal_changes", 0)
         steps = state.get("steps", 1)
         change_rate = signal_changes / max(steps, 1)
@@ -108,7 +101,7 @@ class Grader:
         else:
             metrics.stability = 0.0
 
-        # 5. Congestion Penalty (-0.30 to 0.0)
+        # 5. Congestion Penalty
         avg_waiting = info.get("avg_waiting_time", 0)
         waiting_max = self.thresholds["waiting_time_max"]
 
@@ -132,7 +125,6 @@ class Grader:
         if congestion_events > 5:
             extra_penalties -= min(0.15, congestion_events * 0.03)
 
-        # Calculate final score
         raw_score = (
             metrics.efficiency +
             metrics.responsiveness +
@@ -142,7 +134,6 @@ class Grader:
             extra_penalties
         )
 
-        # Apply difficulty scaling
         difficulty_scaling = {
             "easy": 1.0,
             "medium": 0.85,
@@ -150,7 +141,7 @@ class Grader:
         }
         scaling = difficulty_scaling.get(self.task, 1.0)
 
-        # Strictly between 0 and 1 — never exactly 0.0 or 1.0
+        # Strictly between 0 and 1
         final_score = max(0.01, min(0.99, raw_score * scaling))
 
         metrics_dict = {
